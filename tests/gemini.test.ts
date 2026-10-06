@@ -34,7 +34,7 @@ describe('GeminiProvider structured output boundary', () => {
     }));
     const schema = (create.mock.calls[0][0] as { response_format: { schema: Record<string, unknown> } }).response_format.schema;
     expect(JSON.stringify(schema)).not.toMatch(/"(?:minLength|maxLength)"/);
-    expect(JSON.stringify(schema)).toContain('"maxItems"');
+    expect(JSON.stringify(schema)).not.toMatch(/"(?:minItems|maxItems)"/);
   });
 
   it('rejects malformed JSON or a schema-invalid model response', async () => {
@@ -42,6 +42,20 @@ describe('GeminiProvider structured output boundary', () => {
     const provider = new GeminiProvider('test-key');
     await expect(provider.analyzeIdea(ideaInputSchema.parse({ idea: 'A small planner', platform: 'Web', outputLanguage: 'English' })))
       .rejects.toMatchObject({ code: 'invalid-response' });
+  });
+
+  it('preserves Gemini rate-limit failures instead of converting them to generic outages', async () => {
+    create.mockRejectedValueOnce(Object.assign(new Error('rate limit'), { status: 429 }));
+    const provider = new GeminiProvider('test-key');
+    await expect(provider.analyzeIdea(ideaInputSchema.parse({ idea: 'A small planner', outputLanguage: 'English' })))
+      .rejects.toMatchObject({ code: 'rate-limited' });
+  });
+
+  it('marks provider request rejections separately from outages', async () => {
+    create.mockRejectedValueOnce(Object.assign(new Error('invalid schema'), { status: 400 }));
+    const provider = new GeminiProvider('test-key');
+    await expect(provider.analyzeIdea(ideaInputSchema.parse({ idea: 'A small planner', outputLanguage: 'English' })))
+      .rejects.toMatchObject({ code: 'provider-request' });
   });
 
   it('keeps user text out of the system instruction when output language follows the idea', async () => {

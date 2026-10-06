@@ -6,7 +6,7 @@ export interface AIProvider {
 }
 
 export class AIProviderError extends Error {
-  constructor(readonly code: 'configuration' | 'invalid-response' | 'request-too-large' | 'unavailable') {
+  constructor(readonly code: 'configuration' | 'invalid-response' | 'provider-request' | 'rate-limited' | 'request-too-large' | 'unavailable') {
     super(code);
     this.name = 'AIProviderError';
   }

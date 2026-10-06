@@ -45,7 +45,13 @@ export function apiErrorResponse(error: unknown): NextResponse {
     return jsonNoStore({ error: 'This request is too large. Shorten the project details and try again.' }, { status: 413 });
   }
   if (error instanceof AIProviderError && error.code === 'configuration') {
-    return jsonNoStore({ error: 'AI is not configured yet. Add a Gemini API key on the server to enable analysis.' }, { status: 503 });
+    return jsonNoStore({ error: 'The Gemini API key or access to the selected model is unavailable. Check the server API key and model access.' }, { status: 503 });
+  }
+  if (error instanceof AIProviderError && error.code === 'rate-limited') {
+    return jsonNoStore({ error: 'The Gemini usage limit has been reached. Wait for the limit to reset or check the model quota, then try again.' }, { status: 429 });
+  }
+  if (error instanceof AIProviderError && error.code === 'provider-request') {
+    return jsonNoStore({ error: 'Gemini rejected the structured request. Check the configured model and response schema, then try again.' }, { status: 502 });
   }
   if (error instanceof AIProviderError && error.code === 'unavailable') {
     return jsonNoStore({ error: 'The AI service could not complete this request. Check your connection and try again.' }, { status: 502 });

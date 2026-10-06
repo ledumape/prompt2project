@@ -8,6 +8,8 @@
   --panel-strong: #232430;
   --line: #343542;
   --line-soft: #292a36;
+  --map-dot: #555663;
+  --map-node-line: #42434e;
   --text: #f2f0f6;
   --muted: #9e9eae;
   --quiet: #737384;
@@ -30,6 +32,8 @@
   --panel-strong: #f1eee7;
   --line: #d9d5cc;
   --line-soft: #e8e4dc;
+  --map-dot: #a9a49a;
+  --map-node-line: #aaa49a;
   --text: #25232d;
   --muted: #65626f;
   --quiet: #85818b;
@@ -119,17 +123,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .visual-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 23px; }
 .visual-heading p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 13%, transparent); }
-.map-stage { position: relative; min-height: 257px; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line-soft); border-radius: 13px; background-image: radial-gradient(var(--line) .7px, transparent .7px); background-size: 17px 17px; background-color: var(--bg); }
+.map-stage { position: relative; container-type: inline-size; min-height: 257px; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line-soft); border-radius: 13px; background-image: radial-gradient(var(--map-dot) 1px, transparent 1px); background-size: 17px 17px; background-color: var(--bg); }
 .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .65; }
 .map-lines path { fill: none; stroke: var(--line); stroke-width: 1.3; stroke-dasharray: 4 4; }
 .idea-node, .concept-node, .core-node { position: absolute; display: grid; place-items: center; text-align: center; transition: color .2s ease, border-color .2s ease, background-color .2s ease, box-shadow .2s ease; }
-.idea-node { z-index: 2; left: 50%; top: 16px; width: min(210px, 75%); min-height: 48px; padding: 9px 11px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 11px; background: var(--panel); color: var(--muted); font-size: 11px; line-height: 1.35; }
+.idea-node { z-index: 2; left: 0; right: 0; top: 16px; width: min(210px, 75%); max-height: 68px; min-height: 48px; margin-inline: auto; padding: 9px 11px; overflow: hidden; overflow-wrap: anywhere; border: 1px solid var(--map-node-line); border-radius: 11px; background: var(--panel); color: var(--muted); font-size: 11px; line-height: 1.35; }
 .idea-node.is-active { border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent); }
-.concept-node { top: 116px; max-width: 38%; min-width: 81px; height: 34px; padding: 0 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-raised); color: var(--muted); font: 10px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+.concept-node { top: 116px; max-width: 38%; min-width: 81px; height: 34px; padding: 0 10px; overflow: hidden; border: 1px solid var(--map-node-line); border-radius: 999px; background: var(--bg-raised); color: var(--muted); font: 10px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
 .concept-node.left { left: 9%; }
-.concept-node.middle { left: 50%; transform: translateX(-50%); }
+.concept-node.middle { left: 0; right: 0; width: max-content; margin-inline: auto; }
 .concept-node.right { right: 9%; }
-.core-node { left: 50%; bottom: 24px; min-width: 111px; height: 44px; transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--lavender) 53%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--lavender) 10%, var(--bg-raised)); color: var(--lavender); font: 10px var(--mono); }
+.core-node { left: 0; right: 0; bottom: 24px; width: max-content; min-width: 111px; height: 44px; margin-inline: auto; border: 1px solid color-mix(in srgb, var(--lavender) 53%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--lavender) 10%, var(--bg-raised)); color: var(--lavender); font: 10px var(--mono); }
 .concept-node.is-active, .core-node.is-active { color: var(--text); border-color: var(--accent); background: var(--accent-wash); }
 .idea-node.is-current, .concept-node.is-current, .core-node.is-current { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent); }
 .map-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 2px 2px; color: var(--muted); font-size: 11px; }
@@ -226,6 +230,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .toolbar-actions { width: 100%; }
   .toolbar-actions > * { flex: 1; }
   .challenge-card, .question-card { padding: 16px; }
+}
+
+@container (max-width: 300px) {
+  .concept-node { min-width: 0; width: 27%; padding-inline: 4px; font-size: 9px; }
+  .concept-node.left { left: 7%; }
+  .concept-node.middle { right: 0; width: 27%; }
+  .concept-node.right { right: 7%; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

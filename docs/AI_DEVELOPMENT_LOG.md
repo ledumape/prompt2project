@@ -56,3 +56,12 @@ This log records notable work from the current development session. It does not 
 - **Tests added:** English and Portuguese exports, both language outcomes for “Same as input,” selected-English behavior, concept extraction in English and Portuguese, and project-ID/history replacement behavior.
 - **Verification performed:** `npm test` passed (20 tests across 7 files); `npm run lint`, `npm run typecheck`, and `npm run build` all passed.
 - **Not performed:** No deployment or live Gemini request was run.
+
+## 2026-10-06 — Map readability and Gemini request errors
+
+- **Task:** Fix the light-theme idea map, narrow-screen node layout, uncontrolled input warning, and opaque `/api/spec` 502 response.
+- **Changes:** Added theme-specific dot and node-border colors; centered map nodes without transforms that conflict with animation; constrained the idea label; reduced concept-node widths below 420px; normalized optional draft fields when opening saved projects; removed Portuguese request verbs and generic people words from extracted concepts.
+- **Gemini error handling:** Kept upstream status categories without logging prompts or credentials. Quota exhaustion now returns an actionable HTTP 429, invalid provider requests are distinguished from transient outages, and invalid API-key/model access receives a separate configuration response. The provider schema omits string/array length bounds while local Zod validation still enforces them.
+- **Automated verification:** `npm test` passed (26 tests across 9 files), `npm run lint` passed, `npm run typecheck` passed, and `npm run build` passed on 2026-10-06.
+- **Live API limitation:** The configured Gemini model accepted a minimal structured-output diagnostic and returned HTTP 400 for the full generated schema. Further diagnostics then hit the key's Gemini free-tier HTTP 429 daily limit. The simplified provider schema and HTTP status handling have automated coverage, but a successful live `/api/spec` request after this change could not be confirmed until quota resets or another key is configured.
+- **Not performed:** No deployment.

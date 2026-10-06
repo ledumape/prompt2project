@@ -13,13 +13,14 @@ import {
 } from '../lib/schemas/project';
 import { buildCodingPrompt, specToMarkdown } from '../lib/domain/markdown';
 import { extractIdeaConcepts } from '../lib/domain/idea-concepts';
+import { normalizeIdeaDraft } from '../lib/domain/idea-draft';
 import { createAnalyzedProject, upsertProject } from '../lib/domain/projects';
 import { parseProjects, serializeProjects, type SavedProject } from '../lib/storage/projects';
 
 type BusyAction = 'analyze' | 'spec' | null;
 type ToastState = { message: string; id: number } | null;
 
-const blankIdea: IdeaInputDraft = { idea: '', platform: "I don't know yet", outputLanguage: 'English' };
+const blankIdea: IdeaInputDraft = normalizeIdeaDraft();
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 }, transition: { duration: 0.24, ease: 'easeOut' as const } };
 const sectionFields: { key: keyof ProjectSpec; title: string; icon: typeof FileText; fields: { key: string; label: string; wide?: boolean }[] }[] = [
   { key: 'overview', title: 'Overview', icon: Compass, fields: [{ key: 'projectName', label: 'Project name' }, { key: 'summary', label: 'One-line summary' }, { key: 'problem', label: 'Problem', wide: true }, { key: 'solution', label: 'Proposed solution', wide: true }, { key: 'targetUser', label: 'Target user', wide: true }, { key: 'goals', label: 'Goals', wide: true }] },
@@ -150,7 +151,7 @@ export function Workspace() {
 
   function openProject(project: SavedProject) {
     setCurrent(project);
-    setInput(project.idea);
+    setInput(normalizeIdeaDraft(project.idea));
     setAnswers(project.answers || {});
     setDecisions(project.challengeDecisions || {});
     setSpec(project.spec || null);
@@ -302,14 +303,14 @@ export function Workspace() {
           <div className="workbench-grid">
             <form className="card idea-card" onSubmit={analyzeIdea}>
               <div className="card-topline"><h2 className="card-title">Start with the idea</h2><span className="step-note">01 / 03 · DISCOVERY</span></div>
-              <div className="field"><label htmlFor="project-name">Project name <span>optional</span></label><input id="project-name" maxLength={100} placeholder="e.g. Trail Notes" value={input.projectName} onChange={(event) => setInput({ ...input, projectName: event.target.value })} /></div>
-              <div className="field"><label htmlFor="idea">What do you want to build? <span>required</span></label><textarea id="idea" className="idea-input" minLength={8} maxLength={8_000} required placeholder="A volunteer coordinator for neighborhood food banks. It should match volunteers to shifts and send reminders…" value={input.idea} onChange={(event) => setInput({ ...input, idea: event.target.value })} /></div>
+              <div className="field"><label htmlFor="project-name">Project name <span>optional</span></label><input id="project-name" maxLength={100} placeholder="e.g. Trail Notes" value={input.projectName ?? ''} onChange={(event) => setInput({ ...input, projectName: event.target.value })} /></div>
+              <div className="field"><label htmlFor="idea">What do you want to build? <span>required</span></label><textarea id="idea" className="idea-input" minLength={8} maxLength={8_000} required placeholder="A volunteer coordinator for neighborhood food banks. It should match volunteers to shifts and send reminders…" value={input.idea ?? ''} onChange={(event) => setInput({ ...input, idea: event.target.value })} /></div>
               <div className="field-row">
-                <div className="field"><label htmlFor="platform">Platform</label><div className="select-wrap"><select id="platform" value={input.platform} onChange={(event) => setInput({ ...input, platform: event.target.value as IdeaInput['platform'] })}><option>Web</option><option>Mobile</option><option>Desktop</option><option>API / Backend</option><option>Other</option><option>I don't know yet</option></select><ChevronDown size={14} /></div></div>
-                <div className="field"><label htmlFor="language">Output language</label><div className="select-wrap"><select id="language" value={input.outputLanguage} onChange={(event) => setInput({ ...input, outputLanguage: event.target.value as IdeaInput['outputLanguage'] })}><option>English</option><option>Português</option><option>Same as input</option></select><ChevronDown size={14} /></div></div>
+                <div className="field"><label htmlFor="platform">Platform</label><div className="select-wrap"><select id="platform" value={input.platform ?? "I don't know yet"} onChange={(event) => setInput({ ...input, platform: event.target.value as IdeaInput['platform'] })}><option>Web</option><option>Mobile</option><option>Desktop</option><option>API / Backend</option><option>Other</option><option>I don't know yet</option></select><ChevronDown size={14} /></div></div>
+                <div className="field"><label htmlFor="language">Output language</label><div className="select-wrap"><select id="language" value={input.outputLanguage ?? 'English'} onChange={(event) => setInput({ ...input, outputLanguage: event.target.value as IdeaInput['outputLanguage'] })}><option>English</option><option>Português</option><option>Same as input</option></select><ChevronDown size={14} /></div></div>
               </div>
-              <div className="field"><label htmlFor="target-user">Who is it for? <span>optional</span></label><input id="target-user" maxLength={500} placeholder="e.g. volunteer coordinators at small nonprofits" value={input.targetUser} onChange={(event) => setInput({ ...input, targetUser: event.target.value })} /></div>
-              <div className="field"><label htmlFor="preferences">Preferences or constraints <span>optional</span></label><textarea id="preferences" maxLength={1_500} placeholder="Prefer Python · must work offline · keep hosting costs low" value={input.preferences} onChange={(event) => setInput({ ...input, preferences: event.target.value })} /></div>
+              <div className="field"><label htmlFor="target-user">Who is it for? <span>optional</span></label><input id="target-user" maxLength={500} placeholder="e.g. volunteer coordinators at small nonprofits" value={input.targetUser ?? ''} onChange={(event) => setInput({ ...input, targetUser: event.target.value })} /></div>
+              <div className="field"><label htmlFor="preferences">Preferences or constraints <span>optional</span></label><textarea id="preferences" maxLength={1_500} placeholder="Prefer Python · must work offline · keep hosting costs low" value={input.preferences ?? ''} onChange={(event) => setInput({ ...input, preferences: event.target.value })} /></div>
               {error && <div className="error-box" role="alert"><AlertCircle size={16} />{error}</div>}
               <div className="submit-row"><span className="helper-note"><ShieldCheck size={13} /> Gemini creates your analysis and spec. History stays in this browser.</span><button className="primary-button" type="submit" disabled={busy !== null}>{busy === 'analyze' ? <><LoaderCircle size={15} className="spinner" /> Analyzing idea</> : <>Analyze idea <ArrowRight size={15} /></>}</button></div>
             </form>

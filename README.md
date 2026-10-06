@@ -22,6 +22,7 @@ There is no hosted demo yet. Run the application locally by following [Local set
 
 - Describe a project with a name, idea, platform, target user, constraints, and output language.
 - Explore a visual idea map that breaks the idea into its key concepts and highlights analysis progress.
+- Keep the idea map readable in light and dark themes and prevent concept nodes from colliding on narrow screens.
 - Review known information, open questions, and product engineer challenges.
 - Accept or reject recommendations and answer adaptive questions.
 - Generate a structured project spec and edit its fields before handoff.
@@ -65,6 +66,8 @@ The browser owns interaction state, theme choice, and up to 20 saved projects. N
 The application exposes two server-side operations: `POST /api/discovery` and `POST /api/spec`. Discovery and spec generation are separate because they have different schemas and the user reviews questions and challenge decisions between them. Coding-prompt generation does not need another model call; it is deterministic from the user's edited spec.
 
 Both Gemini calls request JSON output with a JSON Schema and then parse the result through Zod before returning it. The browser checks the response schema once more before it changes application state. Gemini interactions set `store: false`. The API key and model name are read only by the server adapter.
+
+The Gemini adapter omits local string and array size bounds from the provider-facing schema while retaining them in Zod validation. It reports quota exhaustion as HTTP 429 and identifies rejected structured requests separately from transient provider outages.
 
 The model instruction treats user content as untrusted project data. This is useful input guidance, not a substitute for validating every generated field. A malformed response is rejected and displayed as a retryable error.
 

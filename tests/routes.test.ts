@@ -27,8 +27,14 @@ describe('API request boundaries', () => {
   it('keeps missing-key and model-output failures actionable without exposing internals', async () => {
     const missingKey = await apiErrorResponse(new AIProviderError('configuration')).json();
     const badModel = await apiErrorResponse(new AIProviderError('invalid-response')).json();
-    expect(missingKey.error).toContain('Gemini API key');
+    expect(missingKey.error).toContain('API key');
     expect(badModel.error).toContain('AI returned a response');
     expect(JSON.stringify(badModel)).not.toContain('stack');
+  });
+
+  it('returns Gemini quota exhaustion as an actionable 429', async () => {
+    const response = apiErrorResponse(new AIProviderError('rate-limited'));
+    expect(response.status).toBe(429);
+    expect((await response.json()).error).toContain('limit');
   });
 });

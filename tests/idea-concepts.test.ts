@@ -6,4 +6,9 @@ describe('idea concept extraction', () => {
     expect(extractIdeaConcepts('A web app that matches volunteers to shifts and sends reminders.')).toEqual(['volunteers', 'shifts', 'reminders']);
     expect(extractIdeaConcepts('Um aplicativo para organizar turnos de voluntários e enviar lembretes.')).toEqual(['turnos', 'voluntários', 'lembretes']);
   });
+
+  it('skips Portuguese request verbs and generic people words when selecting concepts', () => {
+    expect(extractIdeaConcepts('Quero criar um aplicativo para organizar viagens em grupo. Quero que as pessoas possam sugerir lugares, votar nas opções e dividir os custos da viagem.'))
+      .toEqual(['viagens', 'grupo', 'lugares']);
+  });
 });
