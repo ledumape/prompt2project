@@ -1,0 +1,46 @@
+{
+  "name": "prompt2project",
+  "version": "0.1.0",
+  "description": "Turn rough software ideas into buildable project specifications and coding agent prompts.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": ["ai", "product-engineering", "project-planning", "gemini"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@google/genai": "^2.27.0",
+    "lucide-react": "^1.52.0",
+    "motion": "^14.0.0",
+    "next": "^16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^9.39.5",
+    "jsdom": "^30.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}
