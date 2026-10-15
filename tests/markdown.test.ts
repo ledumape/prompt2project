@@ -47,4 +47,34 @@ describe('spec Markdown and coding prompt', () => {
     expect(specToMarkdown(spec, 'English', 'Quero organizar turnos para voluntários.')).toContain('## Overview');
     expect(buildCodingPrompt(spec, 'English', 'Quero organizar turnos para voluntários.')).toContain('## Testing requirements');
   });
+
+  it('cleans generated prefixes only from the coding prompt', () => {
+    const generatedSpec: ProjectSpec = {
+      ...spec,
+      product: {
+        ...spec.product,
+        userStories: [':trip_creator: As a trip creator, I can share a trip.', ': Como mantenedor, quero acompanhar atualizações.'],
+      },
+      engineering: {
+        ...spec.engineering,
+        decisions: [':Q1: Accept suggestion for a static list.'],
+      },
+      execution: {
+        ...spec.execution,
+        phases: [':Phase 1 – MVP', ':**Phase 2 – Future improvements'],
+      },
+    };
+
+    const prompt = buildCodingPrompt(generatedSpec);
+    const markdown = specToMarkdown(generatedSpec);
+
+    expect(prompt).not.toMatch(/^\s*(?:-\s*)?:(?:Q\d+|trip_creator):/m);
+    expect(prompt).not.toMatch(/^\s*(?:-\s*)?:\s*(?:\*\*)?Phase\s+\d+/mi);
+    expect(prompt).toContain('As a trip creator, I can share a trip.');
+    expect(prompt).toContain('- Como mantenedor, quero acompanhar atualizações.');
+    expect(prompt).not.toContain('- : Como mantenedor');
+    expect(markdown).toContain(':trip_creator:');
+    expect(markdown).toContain(':Q1:');
+    expect(markdown).toContain(':Phase 1');
+  });
 });

@@ -96,11 +96,19 @@ export function specToMarkdown(spec: ProjectSpec, outputLanguage: IdeaInput['out
   ].filter(Boolean).join('\n\n');
 }
 
+function cleanCodingPromptPrefixes(prompt: string): string {
+  return prompt.split('\n').map((line) => line
+    .replace(/^(\s*(?:-\s*)?):[\p{L}\d_-]+:\s*/u, '$1')
+    .replace(/^(\s*(?:-\s*)?):\s+(?=\S)/u, '$1')
+    .replace(/^(\s*(?:-\s*)?):\s*\*{0,2}(?=Phase\s+\d+\b)\s*/iu, '$1'))
+    .join('\n');
+}
+
 export function buildCodingPrompt(spec: ProjectSpec, outputLanguage: IdeaInput['outputLanguage'] = 'English', sourceIdea = ''): string {
   const language = resolveLanguage(outputLanguage, sourceIdea);
   const text = promptText[language];
   const name = spec.overview.projectName || (language === 'Português' ? 'este projeto' : 'this project');
-  return [
+  return cleanCodingPromptPrefixes([
     text.build(name),
     '',
     text.objective,
@@ -120,5 +128,5 @@ export function buildCodingPrompt(spec: ProjectSpec, outputLanguage: IdeaInput['
     '',
     text.done,
     text.doneBody,
-  ].join('\n');
+  ].join('\n'));
 }

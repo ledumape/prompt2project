@@ -8,7 +8,7 @@ function stripProviderUnsupportedBounds(value: unknown): unknown {
     .map(([key, child]) => [key, stripProviderUnsupportedBounds(child)]));
 }
 
-export function toGoogleResponseSchema(schema: z.ZodType): Record<string, unknown> {
+export function toProviderResponseSchema(schema: z.ZodType): Record<string, unknown> {
   const generated = z.toJSONSchema(schema, { target: 'draft-7' }) as Record<string, unknown>;
   delete generated.$schema;
   return stripProviderUnsupportedBounds(generated) as Record<string, unknown>;

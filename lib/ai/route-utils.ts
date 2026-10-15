@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AIProviderError } from './provider';
+import { AIProviderError, type AIErrorCategory } from './provider';
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -36,6 +36,29 @@ export function jsonNoStore(data: unknown, init?: ResponseInit): NextResponse {
   return response;
 }
 
+type SafeObservabilityEnvironment = Record<string, string | undefined>;
+
+export function logSafeAIError(
+  error: unknown,
+  status: number,
+  env: SafeObservabilityEnvironment = process.env,
+): void {
+  if (status < 500) return;
+  const category: AIErrorCategory = error instanceof AIProviderError ? error.category : 'unknown';
+  const diagnosticStatus = error instanceof AIProviderError ? error.upstreamStatus ?? status : status;
+  const safeDetails: Record<string, string | number | boolean> = { category, status: diagnosticStatus };
+  if (error instanceof AIProviderError && error.validationFailure) {
+    safeDetails.validationFailure = error.validationFailure;
+  }
+  if (category === 'redis-unavailable' || category === 'redis-misconfigured') {
+    safeDetails.hasUpstashUrl = Boolean(env.UPSTASH_REDIS_REST_URL);
+    safeDetails.hasUpstashToken = Boolean(env.UPSTASH_REDIS_REST_TOKEN);
+  } else if (category.startsWith('provider-') || category === 'schema-mismatch' || category === 'unknown') {
+    if (env.AI_PROVIDER?.toLowerCase() === 'openrouter') safeDetails.hasOpenRouterApiKey = Boolean(env.OPENROUTER_API_KEY);
+  }
+  console.error('AI route failure', safeDetails);
+}
+
 export function apiErrorResponse(error: unknown): NextResponse {
   if (error instanceof SyntaxError || (error instanceof AIProviderError && error.code === 'invalid-response')) {
     const isAIResponse = error instanceof AIProviderError;
@@ -45,16 +68,22 @@ export function apiErrorResponse(error: unknown): NextResponse {
     return jsonNoStore({ error: 'This request is too large. Shorten the project details and try again.' }, { status: 413 });
   }
   if (error instanceof AIProviderError && error.code === 'configuration') {
-    return jsonNoStore({ error: 'The Gemini API key or access to the selected model is unavailable. Check the server API key and model access.' }, { status: 503 });
+    return jsonNoStore({ error: 'The selected AI provider API key or model access is unavailable. Check the server configuration and model access.' }, { status: 503 });
   }
   if (error instanceof AIProviderError && error.code === 'rate-limited') {
-    return jsonNoStore({ error: 'The Gemini usage limit has been reached. Wait for the limit to reset or check the model quota, then try again.' }, { status: 429 });
+    return jsonNoStore({ error: 'The selected AI provider usage limit has been reached. Wait for it to reset or check the model quota, then try again.' }, { status: 429 });
+  }
+  if (error instanceof AIProviderError && error.code === 'generation-limit') {
+    return jsonNoStore({ error: 'The daily generation limit has been reached. Please try again after 24 hours.' }, { status: 429 });
+  }
+  if (error instanceof AIProviderError && error.code === 'rate-limit-unavailable') {
+    return jsonNoStore({ error: 'AI generation is temporarily unavailable. Please try again later.' }, { status: 503 });
   }
   if (error instanceof AIProviderError && error.code === 'provider-request') {
-    return jsonNoStore({ error: 'Gemini rejected the structured request. Check the configured model and response schema, then try again.' }, { status: 502 });
+    return jsonNoStore({ error: 'The selected AI provider rejected the structured request. Check the configured model and response schema, then try again.' }, { status: 502 });
   }
   if (error instanceof AIProviderError && error.code === 'unavailable') {
-    return jsonNoStore({ error: 'The AI service could not complete this request. Check your connection and try again.' }, { status: 502 });
+    return jsonNoStore({ error: 'AI generation is temporarily unavailable. Please try again later.' }, { status: 503 });
   }
   return jsonNoStore({ error: 'Something went wrong while processing this request.' }, { status: 500 });
 }

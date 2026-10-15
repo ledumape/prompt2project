@@ -17,21 +17,37 @@ const savedProjectSchema = z.object({
   if (project.stage === 'spec' && !project.spec) context.addIssue({ code: 'custom', path: ['spec'], message: 'A project spec is required for this project stage.' });
 });
 
-const envelopeSchema = z.object({ version: z.literal(1), projects: z.array(savedProjectSchema).max(20) });
+const readableEnvelopeSchema = z.object({ version: z.number().int(), projects: z.array(z.unknown()) });
 
 export type SavedProject = z.infer<typeof savedProjectSchema>;
+export const PROJECTS_STORAGE_KEY = 'prompt2project.projects.v1';
+export const PROJECTS_BACKUP_STORAGE_KEY = 'prompt2project.projects.backup.v1';
+
+export function readProjectHistory(serialized: string | null | undefined): { projects: SavedProject[]; needsBackup: boolean } {
+  if (serialized == null) return { projects: [], needsBackup: false };
+
+  try {
+    const parsed: unknown = JSON.parse(serialized);
+    const envelope = readableEnvelopeSchema.safeParse(parsed);
+    if (!envelope.success) return { projects: [], needsBackup: true };
+
+    const projects = envelope.data.projects.flatMap((candidate) => {
+      const result = savedProjectSchema.safeParse(candidate);
+      return result.success ? [result.data] : [];
+    });
+    const needsBackup = envelope.data.version !== 1
+      || projects.length !== envelope.data.projects.length
+      || envelope.data.projects.length > 20;
+    return { projects: projects.slice(0, 20), needsBackup };
+  } catch {
+    return { projects: [], needsBackup: true };
+  }
+}
 
 export function serializeProjects(projects: SavedProject[]): string {
   return JSON.stringify({ version: 1, projects: projects.slice(0, 20) });
 }
 
 export function parseProjects(serialized: string | null | undefined): SavedProject[] {
-  if (!serialized) return [];
-  try {
-    const parsed: unknown = JSON.parse(serialized);
-    const result = envelopeSchema.safeParse(parsed);
-    return result.success ? result.data.projects : [];
-  } catch {
-    return [];
-  }
+  return readProjectHistory(serialized).projects;
 }
